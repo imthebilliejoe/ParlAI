@@ -26,6 +26,7 @@ from operator import attrgetter
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import ipdb
 
 from parlai.core.opt import Opt
 from parlai.utils.distributed import is_distributed, sync_parameters
@@ -706,29 +707,34 @@ class TorchGeneratorAgent(TorchAgent, ABC):
         """
         if batch.label_vec is None:
             raise ValueError('Cannot compute loss without a label.')
+        ipdb.set_trace()
         model_output = self.model(*self._model_input(batch), ys=batch.label_vec)
         scores, preds, *_ = model_output
         score_view = scores.reshape(-1, scores.size(-1))
         loss = self.criterion(score_view, batch.label_vec.view(-1))
-        loss = loss.view(scores.shape[:-1]).sum(dim=1)
+        loss_per_tok = loss.view(scores.shape[:-1])
+
         # save loss to metrics
         notnull = batch.label_vec.ne(self.NULL_IDX)
         target_tokens = notnull.long().sum(dim=-1)
-        correct = ((batch.label_vec == preds) * notnull).sum(dim=-1)
+        old_correct = ((batch.label_vec == preds) * notnull).sum(dim=-1)
+        correct = batch.label_vec == preds
+
+        loss = loss.view(scores.shape[:-1]).sum(dim=1)
 
         # cross entropy loss
+        # self.record_local_metric('loss', AverageMetric.from_mask(loss_per_tok, notnull))
         self.record_local_metric('loss', AverageMetric.many(loss, target_tokens))
         # perplexity
-        self.record_local_metric('ppl', PPLMetric.many(loss, target_tokens))
+        self.record_local_metric('ppl', PPLMetric.from_mask(loss_per_tok, notnull))
         # token-wise accuracy
-        self.record_local_metric(
-            'token_acc', AverageMetric.many(correct, target_tokens)
-        )
+        self.record_local_metric('token_acc', AverageMetric.from_mask(correct, notnull))
         # utterance-wise exact match
         self.record_local_metric(
-            'token_em', AverageMetric.many(correct == target_tokens)
+            'token_em', AverageMetric.many(old_correct == target_tokens)
         )
         # actually do backwards loss
+        loss = loss.view(scores.shape[:-1]).sum(dim=1)
         loss = loss.sum()
         loss /= target_tokens.sum()  # average loss per token
         if return_output:

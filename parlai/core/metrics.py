@@ -270,6 +270,12 @@ class Metric(ABC):
             raise IndexError(f'Uneven {cls.__name__} constructions: {lengths}')
         return [cls(*items) for items in zip(*objs)]
 
+    @classmethod
+    def from_mask(cls, metric_per_token, token_mask) -> List[Metric]:
+        tokens_per_ex = token_mask.long().sum(dim=-1)
+        metric_per_ex = (metric_per_token * token_mask).sum(dim=-1)
+        return cls.many(metric_per_ex, tokens_per_ex)
+
 
 class FixedMetric(Metric):
     """
