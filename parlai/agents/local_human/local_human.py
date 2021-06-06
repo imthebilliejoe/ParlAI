@@ -75,7 +75,7 @@ class LocalHumanAgent(Agent):
         try:
             reply_text = input(colorize("Enter Your Message:", 'text') + ' ')
             translator = Translator(service_urls=['translate.googleapis.com'])
-            reply_text=translator.translate(reply_text,src='en',dest='it').text
+            reply_text=translator.translate(reply_text,src='it',dest='en').text
         except EOFError:
             self.finished = True
             return {'episode_done': True}
