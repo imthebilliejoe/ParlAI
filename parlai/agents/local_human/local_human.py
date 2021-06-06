@@ -16,6 +16,7 @@ from parlai.core.agents import Agent
 from parlai.core.message import Message
 from parlai.utils.misc import display_messages, load_cands
 from parlai.utils.strings import colorize
+from googletrans import Translator
 
 
 class LocalHumanAgent(Agent):
@@ -73,6 +74,8 @@ class LocalHumanAgent(Agent):
         reply['id'] = self.getID()
         try:
             reply_text = input(colorize("Enter Your Message:", 'text') + ' ')
+            translator = Translator(service_urls=['translate.googleapis.com'])
+            reply_text=translator.translate(reply_text,src='en',dest='it').text
         except EOFError:
             self.finished = True
             return {'episode_done': True}
