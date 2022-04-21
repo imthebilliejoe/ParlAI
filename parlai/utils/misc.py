@@ -22,7 +22,7 @@ from parlai.core.message import Message
 from parlai.utils.strings import colorize
 from parlai.utils.io import PathManager
 import parlai.utils.logging as logging
-from googletrans import Translator
+#from googletrans import Translator
 
 try:
     import torch
@@ -586,8 +586,8 @@ def display_messages(
         # Display Text
         if msg.get('text', ''):
             value = clip_text(msg['text'], max_len)
-            translator = Translator(service_urls=['translate.googleapis.com'])
-            value = clip_text(translator.translate(msg['text'],src='en',dest='it').text, max_len)
+            #translator = Translator(service_urls=['translate.googleapis.com'])
+            #value = clip_text(translator.translate(msg['text'],src='en',dest='it').text, max_len)
             style = 'bold_text' if index == 0 else 'labels'
             field = 'text' if verbose else agent_id
             line = _pretty_lines(
